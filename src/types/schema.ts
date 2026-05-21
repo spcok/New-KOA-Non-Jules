@@ -135,8 +135,8 @@ export const ClinicalRecordSchema = z.object({
   weight_grams: z.number(),
   conductor_role: z.string(),
   conducted_by: z.string().uuid(),
-  external_vet_name: z.string(),
-  external_vet_clinic: z.string(),
+  external_vet_name: z.string().nullable().optional(), // NULL LAW ENFORCED
+  external_vet_clinic: z.string().nullable().optional(), // NULL LAW ENFORCED
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
   modified_by: z.string().uuid(),
@@ -194,7 +194,7 @@ export const IsolationLogSchema = z.object({
   animal_id: z.string().uuid(),
   isolation_type: z.string(),
   start_date: z.string(),
-  end_date: z.string(),
+  end_date: z.string().nullable().optional(), // CRITICAL FIX: Allows active lockdowns
   location: z.string(),
   reason_notes: z.string(),
   status: z.string().optional(),

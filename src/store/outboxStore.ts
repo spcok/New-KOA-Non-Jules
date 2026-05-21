@@ -5,7 +5,7 @@ interface Mutation {
   id: string;
   table: string;
   action: 'insert' | 'update' | 'upsert' | 'delete';
-  payload: any;
+  payload: Record<string, unknown>; // TYPE LAW ENFORCED
 }
 
 interface OutboxState {

@@ -10,6 +10,9 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
+// Global reference to track the active subscription
+let authSubscription: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
@@ -25,7 +28,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data: { session } } = await supabase.auth.getSession();
       set({ session, user: session?.user ?? null, isInitialized: true });
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      // Clean up existing listener before creating a new one
+      if (authSubscription) {
+        authSubscription.data.subscription.unsubscribe();
+      }
+
+      authSubscription = supabase.auth.onAuthStateChange((_event, session) => {
         set({ session, user: session?.user ?? null });
       });
     } catch (err) {
