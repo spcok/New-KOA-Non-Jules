@@ -1,57 +1,58 @@
 import { supabase } from '../lib/supabase';
-import { queryClient } from '../lib/db';
 import { useOutboxStore } from '../store/outboxStore';
-import { DailyRoundSchema, DailyRound } from '../types/schema';
+import { DailyRound, DailyRoundSchema } from '../types/schema';
+import { queryClient } from '../lib/db';
 
 const generateUUID = () => crypto.randomUUID();
 
 export const dailyRoundService = {
-  saveRound: async (data: Partial<DailyRound>, userId: string) => {
-    const payload = DailyRoundSchema.parse({
-      ...data,
-      id: data.id || generateUUID(),
-      completed_by: userId, // Mandatory injection
-      is_deleted: false,
-      updated_at: new Date().toISOString(),
-      created_at: data.created_at || new Date().toISOString()
-    });
-
-    queryClient.setQueryData(['daily_rounds'], (old: DailyRound[] | undefined) => {
-      if (!old) return [payload];
-      return old.map(r => r.id === payload.id ? payload : r);
-    });
-
-    try {
-      const { error } = await supabase.from('daily_rounds').upsert(payload);
-      if (error) throw error;
-    } catch (error) {
-      useOutboxStore.getState().addMutation({
-        id: generateUUID(),
-        table: 'daily_rounds',
-        action: 'upsert',
-        payload
-      });
-    }
+  getDailyRounds: async (date: string, shift: string): Promise<DailyRound[]> => {
+    const { data, error } = await supabase
+      .from('daily_rounds')
+      .select('*')
+      .eq('date', date)
+      .eq('shift', shift)
+      .eq('is_deleted', false);
+      
+    if (error) throw error;
+    return data as DailyRound[];
   },
 
-  bulkSaveRound: async (rounds: DailyRound[], userId: string) => {
-    const payload = rounds.map(r => DailyRoundSchema.parse({
-        ...r,
-        completed_by: userId // Mandatory injection
-    }));
+  bulkSaveRound: async (rounds: Partial<DailyRound>[], userId: string): Promise<void> => {
+    for (const round of rounds) {
+      const isNew = !round.id;
+      
+      // NULL LAW Enforcement
+      const sanitizedRound = Object.fromEntries(
+        Object.entries(round).map(([key, value]) => [key, value === '' ? null : value])
+      );
 
-    queryClient.setQueryData(['daily_rounds'], (old: DailyRound[] = []) => [...old, ...payload]);
-
-    try {
-      const { error } = await supabase.from('daily_rounds').upsert(payload);
-      if (error) throw error;
-    } catch (error) {
-      useOutboxStore.getState().addMutation({
-        id: generateUUID(),
-        table: 'daily_rounds',
-        action: 'upsert',
-        payload
+      // ZOD LAW Enforcement: Required booleans must default to false if not explicitly checked
+      const payload = DailyRoundSchema.parse({
+        ...sanitizedRound,
+        id: sanitizedRound.id || generateUUID(),
+        is_alive: sanitizedRound.is_alive ?? false,
+        water_checked: sanitizedRound.water_checked ?? false,
+        locks_secured: sanitizedRound.locks_secured ?? false,
+        created_by: isNew ? userId : (sanitizedRound.created_by || userId),
+        modified_by: userId,
+        created_at: isNew ? new Date().toISOString() : sanitizedRound.created_at,
+        updated_at: new Date().toISOString(),
+        is_deleted: false,
       });
+
+      try {
+        const { error } = await supabase.from('daily_rounds').upsert(payload);
+        if (error) throw error;
+      } catch (error) {
+        console.warn("Network offline. Queueing Daily Round to outbox.", error);
+        useOutboxStore.getState().addMutation({
+          id: generateUUID(),
+          table: 'daily_rounds',
+          action: 'upsert',
+          payload
+        });
+      }
     }
   }
 };

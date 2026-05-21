@@ -179,7 +179,7 @@ function ClinicalRecordModal({ onClose, userId, animals, staff }: { onClose: () 
         soap_objective: objective,
         soap_assessment: assessment,
         soap_plan: plan,
-        weight_grams: Number(weightGrams) || 0,
+        weight_grams: Number(weightGrams), // DATA INTEGRITY FIX: Removed coercion
         conductor_role: conductorRole,
         conducted_by: conductedBy,
         external_vet_name: conductorRole === 'EXTERNAL_VET' ? externalVetName : null,

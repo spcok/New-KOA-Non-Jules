@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
-    Check, X, Droplets, Lock, Heart, AlertTriangle, ClipboardCheck, Calendar, ChevronLeft, ChevronRight
+    Check, X, Droplets, Lock, Heart, AlertTriangle, ClipboardCheck, Calendar, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import { dailyRoundService } from '../../services/dailyRoundService';
+import { animalService } from '../../services/animalService';
 import { Animal, DailyRound } from '../../types/schema';
 import { useAuthStore } from '../../store/authStore';
-import { supabase, getDynamicImageUrl } from '../../lib/supabase';
+import { getDynamicImageUrl } from '../../lib/supabase';
 
 type ReportType = 'HEALTH' | 'WATER' | 'SECURE';
 
@@ -35,48 +36,40 @@ export default function DailyRounds() {
   
   const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
   const [roundType, setRoundType] = useState<'Morning' | 'Evening'>('Morning');
-  
   const [activeCategory, setActiveCategory] = useState<string>('OWLS');
   const categories = ['OWLS', 'RAPTORS', 'MAMMALS', 'EXOTICS'];
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // STATE ARCHITECTURE: Only holds active, uncommitted changes made by the keeper.
   const [pendingChecks, setPendingChecks] = useState<Record<string, Partial<DailyRound>>>({});
+  
   const [reportModal, setReportModal] = useState<{ open: boolean, animalId: string | null, type: ReportType | null }>({ open: false, animalId: null, type: null });
   const [issueText, setIssueText] = useState('');
 
+  // DATABASE LAW ENFORCEMENT: Queries routed strictly through the Service Layer.
   const { data: animals = [], isLoading: loadingAnimals } = useQuery({ 
     queryKey: ['animals'], 
-    queryFn: async () => {
-        const { data } = await supabase.from('animals').select('*').eq('is_deleted', false);
-        return data as Animal[];
-    }
+    queryFn: () => animalService.getAnimals()
   });
 
-  const { data: roundsData, isLoading: loadingRounds } = useQuery({ 
+  const { data: roundsData = [], isLoading: loadingRounds } = useQuery({ 
     queryKey: ['daily_rounds', viewDate, roundType], 
-    queryFn: async () => {
-        const { data } = await supabase
-            .from('daily_rounds')
-            .select('*')
-            .eq('date', viewDate)
-            .eq('shift', roundType)
-            .eq('is_deleted', false);
-        return (data as DailyRound[]) || [];
-    }
+    queryFn: () => dailyRoundService.getDailyRounds(viewDate, roundType)
   });
 
-  useEffect(() => {
-    if (roundsData && roundsData.length > 0) {
-      const initialMap: Record<string, Partial<DailyRound>> = {};
-      roundsData.forEach(round => {
-        if (round.animal_id) {
-          initialMap[round.animal_id] = round;
-        }
-      });
-      setPendingChecks(initialMap);
-    } else {
-      setPendingChecks({});
-    }
-  }, [roundsData, viewDate, roundType]);
+  // DERIVED STATE MATRIX: Safely merges Server Truth with Uncommitted Local Edits without side-effects.
+  const currentStatusMap = useMemo(() => {
+    const map: Record<string, Partial<DailyRound>> = {};
+    // 1. Overlay Truth (Server)
+    roundsData.forEach(round => {
+      if (round.animal_id) map[round.animal_id] = { ...round };
+    });
+    // 2. Overlay Uncommitted Edits (Local)
+    Object.entries(pendingChecks).forEach(([id, pending]) => {
+      map[id] = { ...(map[id] || {}), ...pending };
+    });
+    return map;
+  }, [roundsData, pendingChecks]);
 
   const activeAnimals = animals
     .filter(a => (a.category || '').toUpperCase() === activeCategory)
@@ -86,35 +79,33 @@ export default function DailyRounds() {
     const d = new Date(viewDate);
     d.setDate(d.getDate() + days);
     setViewDate(d.toISOString().split('T')[0]);
+    setPendingChecks({}); // Clear pending edits when changing context
   };
 
   const toggleSpecific = (animal: Animal, type: ReportType) => {
-    const current = pendingChecks[animal.id!] || {};
-    
+    const currentState = currentStatusMap[animal.id!] || {};
     let key: keyof Partial<DailyRound> = 'is_alive';
     if (type === 'WATER') key = 'water_checked';
     if (type === 'SECURE') key = 'locks_secured';
 
-    const val = current[key];
+    const val = currentState[key];
 
     if (val === undefined || val === null) {
-        setPendingChecks(prev => ({ 
-          ...prev, 
-          [animal.id!]: { ...prev[animal.id!], [key]: true } 
-        }));
+        // Empty -> Check OK
+        setPendingChecks(prev => ({ ...prev, [animal.id!]: { ...prev[animal.id!], [key]: true } }));
     } else if (val === true) {
+        // OK -> Report Issue
         setReportModal({ open: true, animalId: animal.id!, type });
-    } else {
-        setPendingChecks(prev => {
-            const next = { ...prev[animal.id!] };
-            delete next[key];
-            if (Object.keys(next).length === 0) {
-                const newState = { ...prev };
-                delete newState[animal.id!];
-                return newState;
-            }
-            return { ...prev, [animal.id!]: next };
-        });
+    } else if (val === false) {
+        // Issue -> Reset to OK (Clears previous issue notes safely)
+        setPendingChecks(prev => ({ 
+            ...prev, 
+            [animal.id!]: { 
+                ...prev[animal.id!], 
+                [key]: true,
+                ...(type === 'HEALTH' ? { animal_issue_note: null } : { general_section_note: null }) 
+            } 
+        }));
     }
   };
 
@@ -142,23 +133,33 @@ export default function DailyRounds() {
   };
 
   const handleSignOff = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || Object.keys(pendingChecks).length === 0) return;
+    setIsSubmitting(true);
     
-    const roundsToSave = Object.entries(pendingChecks).map(([id, data]) => ({
-        ...data,
-        animal_id: id,
-        date: viewDate,
-        shift: roundType,
-        completed_at: new Date().toISOString(),
-        completed_by: session.user.id
-    }));
+    try {
+      const roundsToSave = Object.entries(pendingChecks).map(([id, pendingData]) => {
+          const serverRound = roundsData.find(r => r.animal_id === id) || {};
+          return {
+              ...serverRound,
+              ...pendingData,
+              animal_id: id,
+              date: viewDate,
+              shift: roundType,
+              completed_at: new Date().toISOString(),
+              completed_by: session.user.id
+          };
+      });
 
-    await dailyRoundService.bulkSaveRound(roundsToSave as DailyRound[], session.user.id);
-    queryClient.invalidateQueries({ queryKey: ['daily_rounds', viewDate, roundType] });
+      await dailyRoundService.bulkSaveRound(roundsToSave, session.user.id);
+      setPendingChecks({}); // Wipe local state on successful offload
+      queryClient.invalidateQueries({ queryKey: ['daily_rounds', viewDate, roundType] });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderButton = (animal: Animal, type: ReportType) => {
-    const status = pendingChecks[animal.id!];
+    const status = currentStatusMap[animal.id!];
     let key: keyof Partial<DailyRound> = 'is_alive';
     if (type === 'WATER') key = 'water_checked';
     if (type === 'SECURE') key = 'locks_secured';
@@ -182,13 +183,17 @@ export default function DailyRounds() {
         if (type === 'SECURE') Icon = Lock;
     }
 
+    // Highlight uncommitted changes by creating a subtle pulse effect
+    const isUncommitted = pendingChecks[animal.id!] && pendingChecks[animal.id!]![key] !== undefined;
+
     return (
         <button 
             onClick={() => toggleSpecific(animal, type)}
-            className={`w-full py-2.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 border ${styleClass}`}
+            className={`w-full py-2.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 border relative ${styleClass} ${isUncommitted ? 'ring-1 ring-amber-500/50' : ''}`}
         >
             <Icon size={14} className={val === undefined ? "opacity-50" : ""} />
             {text}
+            {isUncommitted && <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />}
         </button>
     );
   };
@@ -215,7 +220,10 @@ export default function DailyRounds() {
             <input 
               type="date" 
               value={viewDate} 
-              onChange={(e) => setViewDate(e.target.value)} 
+              onChange={(e) => {
+                setViewDate(e.target.value);
+                setPendingChecks({});
+              }} 
               className="w-full sm:w-36 bg-[#0A0B0E] border border-slate-800/80 rounded-xl pl-9 pr-2 py-2 text-xs font-bold text-white focus:outline-none focus:border-emerald-500/50 [&::-webkit-calendar-picker-indicator]:invert" 
             />
           </div>
@@ -226,13 +234,13 @@ export default function DailyRounds() {
 
         <div className="flex items-center gap-2 w-full lg:w-auto bg-[#0A0B0E] p-1.5 rounded-xl border border-slate-800/80 shadow-inner">
             <button 
-                onClick={() => setRoundType('Morning')}
+                onClick={() => { setRoundType('Morning'); setPendingChecks({}); }}
                 className={`flex-1 lg:flex-none px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${roundType === 'Morning' ? 'bg-amber-600/20 text-amber-500 border border-amber-500/30 shadow-sm' : 'text-slate-500 hover:text-white border border-transparent'}`}
             >
                 AM Shift
             </button>
             <button 
-                onClick={() => setRoundType('Evening')}
+                onClick={() => { setRoundType('Evening'); setPendingChecks({}); }}
                 className={`flex-1 lg:flex-none px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${roundType === 'Evening' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-sm' : 'text-slate-500 hover:text-white border border-transparent'}`}
             >
                 PM Shift
@@ -241,10 +249,11 @@ export default function DailyRounds() {
         
         <button 
             onClick={handleSignOff} 
-            disabled={Object.keys(pendingChecks).length === 0}
-            className={`w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all ${Object.keys(pendingChecks).length > 0 ? 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 shadow-inner hover:bg-emerald-600 hover:text-white' : 'bg-[#0A0B0E] border border-slate-800/80 text-slate-600 cursor-not-allowed'}`}
+            disabled={Object.keys(pendingChecks).length === 0 || isSubmitting}
+            className={`w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all ${Object.keys(pendingChecks).length > 0 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-[#0A0B0E] border border-slate-800/80 text-slate-600 cursor-not-allowed'}`}
         >
-          <ClipboardCheck size={14} /> Commit Changes & Sign Off
+          {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <ClipboardCheck size={14} />} 
+          Commit Changes & Sign Off
         </button>
       </div>
 

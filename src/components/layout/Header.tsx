@@ -3,13 +3,16 @@ import { LogOut, Play, Square, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { timesheetService } from '../../services/timesheetService';
+import { useOutboxStore } from '../../store/outboxStore';
 
 export function Header() {
   const signOut = useAuthStore((s) => s.signOut);
   const session = useAuthStore((s) => s.session);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Poll for the active shift. This silently triggers the auto-checkout if a stale shift is found.
+  // IMMUTABLE ZUSTAND STORE LAW: Exact isolated selector
+  const pendingMutations = useOutboxStore((s) => s.mutations.length);
+
   const { data: activeShift, isLoading: checkingShift } = useQuery({
     queryKey: ['active_shift', session?.user?.id],
     queryFn: () => timesheetService.getActiveShift(session?.user?.id as string),
@@ -35,7 +38,7 @@ export function Header() {
   return (
     <header className="h-16 bg-[#0F1117] border-b border-slate-800/80 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
       
-      {/* LEFT SIDE: Active Shift Controls */}
+      {/* LEFT SIDE: Active Shift Controls & Sync Status */}
       <div className="flex items-center gap-4">
         {session?.user?.id && (
           <button 
@@ -50,6 +53,19 @@ export function Header() {
             {isProcessing || checkingShift ? <Loader2 size={14} className="animate-spin" /> : activeShift ? <Square size={14} /> : <Play size={14} />}
             {activeShift ? 'Clock Out' : 'Clock In'}
           </button>
+        )}
+
+        {/* OFFLINE SYNC BADGE */}
+        {pendingMutations > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+              Sync Pending ({pendingMutations})
+            </span>
+          </div>
         )}
       </div>
 

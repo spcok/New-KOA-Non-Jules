@@ -25,7 +25,7 @@ const navGroups = [
     items: [
       { name: 'Clinical Records', to: '/clinical/records', icon: HeartPulse },
       { name: 'Medication', to: '/clinical/medication', icon: Syringe },
-      { name: 'Quarantine and Isolation', to: '/clinical/quarantine', icon: ShieldAlert },
+      { name: 'Quarantine and Isolation', to: '/clinical/isolation', icon: ShieldAlert },
     ]
   },
   {
