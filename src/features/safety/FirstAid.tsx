@@ -26,7 +26,6 @@ export default function FirstAid() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
-            <BriefcaseMedical className="text-emerald-500" size={32} />
             First Aid Register
           </h1>
           <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Clinical Administration & Treatment Logging</p>

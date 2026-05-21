@@ -158,13 +158,15 @@ export const ClinicalAttachmentSchema = z.object({
 export const ClinicalScheduleSchema = z.object({
   id: z.string().uuid().optional(),
   animal_id: z.string().uuid(),
-  schedule_type: z.string(),
-  title: z.string(),
+  schedule_type: z.string(), // e.g., 'PRESCRIPTION', 'SUPPLEMENT'
+  medication_name: z.string(), // NEW
+  dosage: z.string(), // NEW
+  route: z.string(), // NEW
   start_date: z.string(),
-  end_date: z.string(),
-  frequency: z.string(),
-  status: z.string().optional(),
-  assigned_to: z.string().uuid(),
+  end_date: z.string().nullable().optional(), // Nullable for ongoing supplements
+  frequency: z.string(), // e.g., 'SID' (Once daily), 'BID' (Twice daily)
+  status: z.string().optional(), // 'ACTIVE', 'COMPLETED', 'DISCONTINUED'
+  assigned_to: z.string().uuid().nullable().optional(), 
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
   modified_by: z.string().uuid(),
@@ -177,8 +179,8 @@ export const MedicationLogSchema = z.object({
   schedule_id: z.string().uuid(),
   animal_id: z.string().uuid(),
   administered_at: z.string(),
-  status: z.string(),
-  notes: z.string(),
+  status: z.string(), // 'ADMINISTERED', 'REFUSED', 'PARTIAL_DOSE', 'MISSED'
+  notes: z.string().nullable().optional(),
   administered_by: z.string().uuid(),
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
@@ -248,22 +250,22 @@ export const FirstAidLogSchema = z.object({
   is_deleted: z.boolean().optional(),
 });
 
-export const FireDrillLogSchema = z.object({
+export const SafetyDrillSchema = z.object({
   id: z.string().uuid().optional(),
   drill_date: z.string(),
   drill_type: z.string(),
+  scenario_description: z.string(),
   areas_involved: z.string(),
-  evacuation_duration: z.string(),
-  roll_call_completed: z.boolean(),
+  duration_seconds: z.number().int(),
+  roll_call_completed: z.boolean().optional(),
   issues_observed: z.string().nullable().optional(),
   corrective_actions: z.string().nullable().optional(),
-  status: z.string(),
+  status: z.string().optional(),
   conducted_by: z.string().uuid().nullable().optional(),
+  is_simulation: z.boolean().optional(),
   is_deleted: z.boolean().optional(),
-  created_by: z.string().uuid().optional(),
-  modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
-  updated_at: z.string().optional(),
+  modified_at: z.string().optional(),
 });
 
 export const MaintenanceTicketSchema = z.object({
@@ -316,6 +318,7 @@ export const TimesheetSchema = z.object({
   clock_out_time: z.string().nullable().optional(),
   status: z.string(),
   notes: z.string().nullable().optional(),
+  auto_clocked_out: z.boolean().optional(), // <-- NEW FIELD
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid().optional(),
   modified_by: z.string().uuid().optional(),
@@ -366,7 +369,7 @@ export type MedicationLog = z.infer<typeof MedicationLogSchema>;
 export type IsolationLog = z.infer<typeof IsolationLogSchema>;
 export type Incident = z.infer<typeof IncidentSchema>;
 export type FirstAidLog = z.infer<typeof FirstAidLogSchema>;
-export type FireDrillLog = z.infer<typeof FireDrillLogSchema>;
+export type SafetyDrill = z.infer<typeof SafetyDrillSchema>;
 export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type Timesheet = z.infer<typeof TimesheetSchema>;

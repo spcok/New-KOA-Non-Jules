@@ -227,7 +227,7 @@ export function Dashboard() {
     <div className="space-y-6 max-w-[1600px] mx-auto font-sans">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">Dashboard</h1>
           <p className="text-slate-400 mt-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
             Live Local Sync <span className="text-slate-700">|</span> 🌤️ Active
           </p>
