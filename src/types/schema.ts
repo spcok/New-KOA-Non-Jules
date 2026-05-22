@@ -327,13 +327,44 @@ export const TimesheetSchema = z.object({
 });
 
 export const UserSchema = z.object({
-  id: z.string().uuid(),
-  email: z.string().nullable().optional(),
-  name: z.string().nullable().optional(),
-  initials: z.string().nullable().optional(),
-  role: z.string().nullable().optional(),
-  is_deleted: z.boolean().optional(),
-  created_at: z.string().nullable().optional(),
+  id: z.string().uuid().optional(),
+  
+  // --- CORE IDENTITY ---
+  name: z.string().min(1, 'Full name is required'),
+  initials: z.string().min(1, 'Initials are required').max(3, 'Initials must be 3 chars max'),
+  email: z.string().email('Invalid email format').nullable().optional(),
+  role: z.enum([
+    'OWNER_DIRECTOR', 
+    'HEAD_KEEPER', 
+    'SENIOR_KEEPER', 
+    'KEEPER', 
+    'TRAINEE', 
+    'MAINTENANCE', 
+    'VET'
+  ]).default('KEEPER'),
+  avatar_url: z.string().nullable().optional(),
+  
+  // --- SECURITY & COMPLIANCE ---
+  pin: z.string().nullable().optional(),
+  signature_url: z.string().nullable().optional(),
+  
+  // --- HR & CONTACT LEDGER ---
+  phone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  emergency_contact_name: z.string().nullable().optional(),
+  emergency_contact_phone: z.string().nullable().optional(),
+  dob: z.string().nullable().optional(),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
+  cv_url: z.string().nullable().optional(),
+  hr_notes: z.string().nullable().optional(),
+  
+  // --- SYSTEM METADATA ---
+  is_active: z.boolean().default(true),
+  is_deleted: z.boolean().default(false),
+  requires_password_change: z.boolean().default(true),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 });
 
 export const RolePermissionSchema = z.object({
@@ -355,7 +386,38 @@ export const OperationalListSchema = z.object({
 });
 
 // ==========================================
-// 5. INFERRED TYPES FOR UI CONSUMPTION
+// 5. SETTINGS & ZLA
+// ==========================================
+
+export const OrganisationSchema = z.object({
+  id: z.string().uuid().optional(),
+  org_name: z.string().min(1, 'Organisation Name is required'),
+  logo_url: z.string().nullable().optional(),
+  contact_email: z.string().email('Invalid email').nullable().optional(),
+  contact_phone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  zla_license_number: z.string().nullable().optional(),
+  official_website: z.string().nullable().optional(),
+  adoption_portal: z.string().nullable().optional(),
+  is_deleted: z.boolean().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const ZLADocumentSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1),
+  category: z.string().min(1),
+  file_url: z.string().min(1),
+  upload_date: z.string(),
+  is_deleted: z.boolean().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+  _modified: z.string().optional(),
+});
+
+// ==========================================
+// 6. INFERRED TYPES FOR UI CONSUMPTION
 // ==========================================
 
 export type Animal = z.infer<typeof AnimalSchema>;
@@ -376,3 +438,5 @@ export type Timesheet = z.infer<typeof TimesheetSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type RolePermission = z.infer<typeof RolePermissionSchema>;
 export type OperationalList = z.infer<typeof OperationalListSchema>;
+export type Organisation = z.infer<typeof OrganisationSchema>;
+export type ZLADocument = z.infer<typeof ZLADocumentSchema>;
