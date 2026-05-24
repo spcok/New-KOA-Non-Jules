@@ -359,10 +359,57 @@ export const UserSchema = z.object({
   cv_url: z.string().nullable().optional(),
   hr_notes: z.string().nullable().optional(),
   
+  export const ShiftPatternSchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string().uuid(),
+  monday: z.boolean().default(false),
+  tuesday: z.boolean().default(false),
+  wednesday: z.boolean().default(false),
+  thursday: z.boolean().default(false),
+  friday: z.boolean().default(false),
+  saturday: z.boolean().default(false),
+  sunday: z.boolean().default(false),
+  start_time: z.string(), // "08:00"
+  end_time: z.string(),   // "17:00"
+  assigned_area: z.string().nullable().optional(),
+  is_deleted: z.boolean().optional(),
+  created_by: z.string().uuid().optional(),
+  modified_by: z.string().uuid().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
   // --- SYSTEM METADATA ---
   is_active: z.boolean().default(true),
   is_deleted: z.boolean().default(false),
   requires_password_change: z.boolean().default(true),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const ShiftSchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string().uuid(),
+  start_time: z.string(),
+  end_time: z.string(),
+  assigned_area: z.string().nullable().optional(),
+  is_deleted: z.boolean().optional(),
+  created_by: z.string().uuid().optional(),
+  modified_by: z.string().uuid().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const LeaveRequestSchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string().uuid(),
+  start_date: z.string(),
+  end_date: z.string(),
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  reviewed_by: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  is_deleted: z.boolean().optional(),
+  created_by: z.string().uuid().optional(),
+  modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });
@@ -424,6 +471,9 @@ export type Animal = z.infer<typeof AnimalSchema>;
 export type DailyLog = z.infer<typeof DailyLogSchema>;
 export type DailyRound = z.infer<typeof DailyRoundSchema>;
 export type FeedingSchedule = z.infer<typeof FeedingScheduleSchema>;
+export type Shift = z.infer<typeof ShiftSchema>;
+export type ShiftPattern = z.infer<typeof ShiftPatternSchema>;
+export type LeaveRequest = z.infer<typeof LeaveRequestSchema>;
 export type ClinicalRecord = z.infer<typeof ClinicalRecordSchema>;
 export type ClinicalAttachment = z.infer<typeof ClinicalAttachmentSchema>;
 export type ClinicalSchedule = z.infer<typeof ClinicalScheduleSchema>;

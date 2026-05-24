@@ -5,11 +5,11 @@ import { QueryClient } from '@tanstack/react-query';
 // 1. Initialize the central Query engine
 export const queryClient = new QueryClient();
 
-// 2. Dynamically route to the Electric Sync engine (zrok tunnel or local)
+// 2. Dynamically route to the Electric Sync engine
 const ELECTRIC_URL = import.meta.env.VITE_ELECTRIC_URL || 'http://localhost:3000';
 const BASE_SHAPE_URL = `${ELECTRIC_URL}/v1/shape`;
 
-// 3. Define all Collections using v2 params structure
+// 3. Define all Collections
 export const animalsCollection = createCollection(
   electricCollectionOptions({
     id: 'animals',
@@ -50,6 +50,22 @@ export const dailyLogsCollection = createCollection(
   })
 );
 
+export const shiftsCollection = createCollection(
+  electricCollectionOptions({
+    id: 'shifts',
+    getKey: (row: any) => row.id,
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'shifts' } }
+  })
+);
+
+export const leaveRequestsCollection = createCollection(
+  electricCollectionOptions({
+    id: 'leave_requests',
+    getKey: (row: any) => row.id,
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'leave_requests' } }
+  })
+);
+
 export const dailyRoundsCollection = createCollection(
   electricCollectionOptions({
     id: 'daily_rounds',
@@ -66,11 +82,11 @@ export const feedingSchedulesCollection = createCollection(
   })
 );
 
-export const fireDrillLogsCollection = createCollection(
+export const firstAidLogsCollection = createCollection(
   electricCollectionOptions({
-    id: 'fire_drill_logs',
+    id: 'first_aid_logs',
     getKey: (row: any) => row.id,
-    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'fire_drill_logs' } }
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'first_aid_logs' } }
   })
 );
 
@@ -114,6 +130,14 @@ export const operationalListsCollection = createCollection(
   })
 );
 
+export const organisationsCollection = createCollection(
+  electricCollectionOptions({
+    id: 'organisations',
+    getKey: (row: any) => row.id,
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'organisations' } }
+  })
+);
+
 export const rolePermissionsCollection = createCollection(
   electricCollectionOptions({
     id: 'role_permissions',
@@ -122,11 +146,11 @@ export const rolePermissionsCollection = createCollection(
   })
 );
 
-export const safetyIncidentsCollection = createCollection(
+export const safetyDrillsCollection = createCollection(
   electricCollectionOptions({
-    id: 'safety_incidents',
+    id: 'safety_drills',
     getKey: (row: any) => row.id,
-    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'safety_incidents' } }
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'safety_drills' } }
   })
 );
 
@@ -151,5 +175,13 @@ export const usersCollection = createCollection(
     id: 'users',
     getKey: (row: any) => row.id,
     shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'users' } }
+  })
+);
+
+export const zlaDocumentsCollection = createCollection(
+  electricCollectionOptions({
+    id: 'zla_documents',
+    getKey: (row: any) => row.id,
+    shapeOptions: { url: BASE_SHAPE_URL, params: { table: 'zla_documents' } }
   })
 );
