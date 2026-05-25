@@ -11,7 +11,7 @@ const BASE_SHAPE_URL = `${ELECTRIC_URL}/v1/shape`;
 export function SyncEngine() {
   const queryClient = useQueryClient();
 
-  // 1. DOWNLINK SHAPES (Subscribing to Electric V2)
+  // 1. DOWNLINK SHAPES
   const { data: animals } = useShape({ url: BASE_SHAPE_URL, params: { table: 'animals' } });
   const { data: clinicalAttachments } = useShape({ url: BASE_SHAPE_URL, params: { table: 'clinical_attachments' } });
   const { data: clinicalRecords } = useShape({ url: BASE_SHAPE_URL, params: { table: 'clinical_records' } });
@@ -30,12 +30,13 @@ export function SyncEngine() {
   const { data: rolePermissions } = useShape({ url: BASE_SHAPE_URL, params: { table: 'role_permissions' } });
   const { data: safetyDrills } = useShape({ url: BASE_SHAPE_URL, params: { table: 'safety_drills' } });
   const { data: shifts } = useShape({ url: BASE_SHAPE_URL, params: { table: 'shifts' } });
+  const { data: shiftPatterns } = useShape({ url: BASE_SHAPE_URL, params: { table: 'shift_patterns' } });
   const { data: tasks } = useShape({ url: BASE_SHAPE_URL, params: { table: 'tasks' } });
   const { data: timesheets } = useShape({ url: BASE_SHAPE_URL, params: { table: 'timesheets' } });
   const { data: users } = useShape({ url: BASE_SHAPE_URL, params: { table: 'users' } });
   const { data: zlaDocuments } = useShape({ url: BASE_SHAPE_URL, params: { table: 'zla_documents' } });
 
-  // 2. CACHE INJECTION (Hydrating TanStack for instant UI reads)
+  // 2. CACHE INJECTION
   useEffect(() => { if (animals) queryClient.setQueryData(['animals'], animals); }, [animals, queryClient]);
   useEffect(() => { if (clinicalAttachments) queryClient.setQueryData(['clinical_attachments'], clinicalAttachments); }, [clinicalAttachments, queryClient]);
   useEffect(() => { if (clinicalRecords) queryClient.setQueryData(['clinical_records'], clinicalRecords); }, [clinicalRecords, queryClient]);
@@ -54,12 +55,13 @@ export function SyncEngine() {
   useEffect(() => { if (rolePermissions) queryClient.setQueryData(['role_permissions'], rolePermissions); }, [rolePermissions, queryClient]);
   useEffect(() => { if (safetyDrills) queryClient.setQueryData(['safety_drills'], safetyDrills); }, [safetyDrills, queryClient]);
   useEffect(() => { if (shifts) queryClient.setQueryData(['shifts'], shifts); }, [shifts, queryClient]);
+  useEffect(() => { if (shiftPatterns) queryClient.setQueryData(['shift_patterns'], shiftPatterns); }, [shiftPatterns, queryClient]);
   useEffect(() => { if (tasks) queryClient.setQueryData(['tasks'], tasks); }, [tasks, queryClient]);
   useEffect(() => { if (timesheets) queryClient.setQueryData(['timesheets'], timesheets); }, [timesheets, queryClient]);
   useEffect(() => { if (users) queryClient.setQueryData(['users'], users); }, [users, queryClient]);
   useEffect(() => { if (zlaDocuments) queryClient.setQueryData(['zla_documents'], zlaDocuments); }, [zlaDocuments, queryClient]);
 
-  // 3. OUTBOX DRAINER (Uplink Recovery)
+  // 3. OUTBOX DRAINER
   useEffect(() => {
     const drainOutbox = async () => {
       if (!navigator.onLine) return;
@@ -94,7 +96,7 @@ export function SyncEngine() {
     };
 
     window.addEventListener('online', drainOutbox);
-    const interval = setInterval(drainOutbox, 10000); // Check every 10 seconds
+    const interval = setInterval(drainOutbox, 10000); 
     
     return () => {
       window.removeEventListener('online', drainOutbox);

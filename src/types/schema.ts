@@ -1,3 +1,4 @@
+// src/types/schema.ts
 import { z } from 'zod';
 
 // ==========================================
@@ -77,6 +78,7 @@ export const DailyLogSchema = z.object({
   modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
+  weight_not_required: z.boolean().optional(),
 });
 
 export const DailyRoundSchema = z.object({
@@ -117,6 +119,7 @@ export const FeedingScheduleSchema = z.object({
   modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
+  feed_not_required: z.boolean().optional(),
 });
 
 // ==========================================
@@ -135,8 +138,8 @@ export const ClinicalRecordSchema = z.object({
   weight_grams: z.number(),
   conductor_role: z.string(),
   conducted_by: z.string().uuid(),
-  external_vet_name: z.string().nullable().optional(), // NULL LAW ENFORCED
-  external_vet_clinic: z.string().nullable().optional(), // NULL LAW ENFORCED
+  external_vet_name: z.string().nullable().optional(),
+  external_vet_clinic: z.string().nullable().optional(),
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
   modified_by: z.string().uuid(),
@@ -158,14 +161,14 @@ export const ClinicalAttachmentSchema = z.object({
 export const ClinicalScheduleSchema = z.object({
   id: z.string().uuid().optional(),
   animal_id: z.string().uuid(),
-  schedule_type: z.string(), // e.g., 'PRESCRIPTION', 'SUPPLEMENT'
-  medication_name: z.string(), // NEW
-  dosage: z.string(), // NEW
-  route: z.string(), // NEW
+  schedule_type: z.string(),
+  medication_name: z.string(),
+  dosage: z.string(),
+  route: z.string(),
   start_date: z.string(),
-  end_date: z.string().nullable().optional(), // Nullable for ongoing supplements
-  frequency: z.string(), // e.g., 'SID' (Once daily), 'BID' (Twice daily)
-  status: z.string().optional(), // 'ACTIVE', 'COMPLETED', 'DISCONTINUED'
+  end_date: z.string().nullable().optional(),
+  frequency: z.string(),
+  status: z.string().optional(),
   assigned_to: z.string().uuid().nullable().optional(), 
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
@@ -179,7 +182,7 @@ export const MedicationLogSchema = z.object({
   schedule_id: z.string().uuid(),
   animal_id: z.string().uuid(),
   administered_at: z.string(),
-  status: z.string(), // 'ADMINISTERED', 'REFUSED', 'PARTIAL_DOSE', 'MISSED'
+  status: z.string(),
   notes: z.string().nullable().optional(),
   administered_by: z.string().uuid(),
   is_deleted: z.boolean().optional(),
@@ -194,7 +197,7 @@ export const IsolationLogSchema = z.object({
   animal_id: z.string().uuid(),
   isolation_type: z.string(),
   start_date: z.string(),
-  end_date: z.string().nullable().optional(), // CRITICAL FIX: Allows active lockdowns
+  end_date: z.string().nullable().optional(),
   location: z.string(),
   reason_notes: z.string(),
   status: z.string().optional(),
@@ -207,7 +210,7 @@ export const IsolationLogSchema = z.object({
 });
 
 // ==========================================
-// 3. SAFETY & COMPLIANCE (UPDATED)
+// 3. SAFETY & COMPLIANCE
 // ==========================================
 
 export const IncidentSchema = z.object({
@@ -318,7 +321,7 @@ export const TimesheetSchema = z.object({
   clock_out_time: z.string().nullable().optional(),
   status: z.string(),
   notes: z.string().nullable().optional(),
-  auto_clocked_out: z.boolean().optional(), // <-- NEW FIELD
+  auto_clocked_out: z.boolean().optional(),
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid().optional(),
   modified_by: z.string().uuid().optional(),
@@ -328,8 +331,6 @@ export const TimesheetSchema = z.object({
 
 export const UserSchema = z.object({
   id: z.string().uuid().optional(),
-  
-  // --- CORE IDENTITY ---
   name: z.string().min(1, 'Full name is required'),
   initials: z.string().min(1, 'Initials are required').max(3, 'Initials must be 3 chars max'),
   email: z.string().email('Invalid email format').nullable().optional(),
@@ -343,12 +344,8 @@ export const UserSchema = z.object({
     'VET'
   ]).default('KEEPER'),
   avatar_url: z.string().nullable().optional(),
-  
-  // --- SECURITY & COMPLIANCE ---
   pin: z.string().nullable().optional(),
   signature_url: z.string().nullable().optional(),
-  
-  // --- HR & CONTACT LEDGER ---
   phone: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   emergency_contact_name: z.string().nullable().optional(),
@@ -358,8 +355,14 @@ export const UserSchema = z.object({
   end_date: z.string().nullable().optional(),
   cv_url: z.string().nullable().optional(),
   hr_notes: z.string().nullable().optional(),
-  
-  export const ShiftPatternSchema = z.object({
+  is_active: z.boolean().default(true),
+  is_deleted: z.boolean().default(false),
+  requires_password_change: z.boolean().default(true),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const ShiftPatternSchema = z.object({
   id: z.string().uuid().optional(),
   user_id: z.string().uuid(),
   monday: z.boolean().default(false),
@@ -369,19 +372,12 @@ export const UserSchema = z.object({
   friday: z.boolean().default(false),
   saturday: z.boolean().default(false),
   sunday: z.boolean().default(false),
-  start_time: z.string(), // "08:00"
-  end_time: z.string(),   // "17:00"
+  start_time: z.string(), 
+  end_time: z.string(),   
   assigned_area: z.string().nullable().optional(),
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid().optional(),
   modified_by: z.string().uuid().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-});
-  // --- SYSTEM METADATA ---
-  is_active: z.boolean().default(true),
-  is_deleted: z.boolean().default(false),
-  requires_password_change: z.boolean().default(true),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });
