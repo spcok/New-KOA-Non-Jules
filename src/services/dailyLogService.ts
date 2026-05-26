@@ -25,6 +25,22 @@ export const dailyLogService = {
     return data as DailyLog[];
   },
 
+  getDashboardLogs: async (dateStr: string): Promise<{ todaysLogs: DailyLog[], lastFeeds: DailyLog[] }> => {
+    const todaysLogs = await dailyLogService.getLogsByDate(dateStr);
+
+    const { data: rawFeeds, error } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('log_type', 'FEED')
+      .eq('is_deleted', false)
+      .order('log_date', { ascending: false })
+      .limit(30);
+
+    const lastFeeds = error ? [] : (rawFeeds as DailyLog[]);
+
+    return { todaysLogs, lastFeeds };
+  },
+
   // NEW: Added boundary for Animal Profile queries
   getLogsByAnimal: async (animalId: string): Promise<DailyLog[]> => {
     const { data, error } = await supabase

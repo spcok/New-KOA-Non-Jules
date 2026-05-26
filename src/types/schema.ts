@@ -1,4 +1,3 @@
-// src/types/schema.ts
 import { z } from 'zod';
 
 // ==========================================
@@ -62,14 +61,22 @@ export const AnimalSchema = z.object({
   sign_content: z.string().nullable().optional(),
 });
 
+// JSONB Array Structure for Multi-Item Feeds
+export const FeedItemSchema = z.object({
+  food_type: z.string(),
+  quantity: z.number()
+});
+
 export const DailyLogSchema = z.object({
   id: z.string().uuid().optional(),
   animal_id: z.string().uuid(),
   log_type: z.string(),
   log_date: z.string(),
   notes: z.string().nullable().optional(),
+  weight_not_required: z.boolean().optional(),
   weight_grams: z.number().nullable().optional(),
   weight_unit: z.string().nullable().optional(),
+  feed_details: z.array(FeedItemSchema).nullable().optional(), // <-- Injected here
   basking_temp_c: z.number().nullable().optional(),
   cool_temp_c: z.number().nullable().optional(),
   temperature_c: z.number().nullable().optional(),
@@ -78,7 +85,6 @@ export const DailyLogSchema = z.object({
   modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
-  weight_not_required: z.boolean().optional(),
 });
 
 export const DailyRoundSchema = z.object({
@@ -108,6 +114,7 @@ export const FeedingScheduleSchema = z.object({
   food_type: z.string(),
   quantity: z.number(),
   calci_dust: z.boolean(),
+  feed_not_required: z.boolean().optional(),
   additional_notes: z.string().nullable().optional(),
   is_completed: z.boolean().optional(),
   completed_at: z.string().nullable().optional(),
@@ -119,7 +126,6 @@ export const FeedingScheduleSchema = z.object({
   modified_by: z.string().uuid().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
-  feed_not_required: z.boolean().optional(),
 });
 
 // ==========================================
@@ -195,13 +201,15 @@ export const MedicationLogSchema = z.object({
 export const IsolationLogSchema = z.object({
   id: z.string().uuid().optional(),
   animal_id: z.string().uuid(),
-  isolation_type: z.string(),
+  isolation_type: z.string().nullable().optional(),
+  isolation_reason: z.string().nullable().optional(),
   start_date: z.string(),
   end_date: z.string().nullable().optional(),
   location: z.string(),
-  reason_notes: z.string(),
+  reason_notes: z.string().nullable().optional(),
+  clearance_notes: z.string().nullable().optional(),
   status: z.string().optional(),
-  authorized_by: z.string().uuid(),
+  authorized_by: z.string().uuid().nullable().optional(),
   is_deleted: z.boolean().optional(),
   created_by: z.string().uuid(),
   modified_by: z.string().uuid(),
@@ -459,11 +467,42 @@ export const ZLADocumentSchema = z.object({
   _modified: z.string().optional(),
 });
 
+export const InternalMovementSchema = z.object({
+  id: z.string().uuid().optional(),
+  animal_id: z.string().uuid(),
+  movement_date: z.string(),
+  from_location: z.string().nullable().optional(),
+  to_location: z.string(),
+  reason_notes: z.string().nullable().optional(),
+  moved_by: z.string().uuid(),
+  is_deleted: z.boolean().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const ExternalTransferSchema = z.object({
+  id: z.string().uuid().optional(),
+  animal_id: z.string().uuid(),
+  transfer_type: z.string(), 
+  transfer_date: z.string(),
+  entity_name: z.string(),
+  contact_details: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  authorized_by: z.string().uuid(),
+  is_deleted: z.boolean().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+// Add to your exports at the bottom of the file:
+
+
 // ==========================================
 // 6. INFERRED TYPES FOR UI CONSUMPTION
 // ==========================================
 
 export type Animal = z.infer<typeof AnimalSchema>;
+export type FeedItem = z.infer<typeof FeedItemSchema>;
 export type DailyLog = z.infer<typeof DailyLogSchema>;
 export type DailyRound = z.infer<typeof DailyRoundSchema>;
 export type FeedingSchedule = z.infer<typeof FeedingScheduleSchema>;
@@ -479,6 +518,8 @@ export type Incident = z.infer<typeof IncidentSchema>;
 export type FirstAidLog = z.infer<typeof FirstAidLogSchema>;
 export type SafetyDrill = z.infer<typeof SafetyDrillSchema>;
 export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;
+export type InternalMovement = z.infer<typeof InternalMovementSchema>;
+export type ExternalTransfer = z.infer<typeof ExternalTransferSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type Timesheet = z.infer<typeof TimesheetSchema>;
 export type User = z.infer<typeof UserSchema>;

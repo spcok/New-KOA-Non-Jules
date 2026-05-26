@@ -1,8 +1,37 @@
 import { supabase } from '../lib/supabase';
-import { Shift, LeaveRequest } from '../types/schema';
+import { Shift, LeaveRequest, ShiftPattern } from '../types/schema';
 import { useOutboxStore } from '../store/outboxStore';
 
 export const rotaService = {
+  async saveShiftPattern(pattern: Partial<ShiftPattern>, userId: string): Promise<ShiftPattern> {
+    const payload = {
+      ...pattern,
+      modified_by: userId,
+      ...(pattern.id ? {} : { created_by: userId })
+    };
+
+    try {
+      if (pattern.id) {
+        const { data, error } = await supabase.from('shift_patterns').update(payload).eq('id', pattern.id).select().single();
+        if (error) throw error;
+        return data as ShiftPattern;
+      } else {
+        const { data, error } = await supabase.from('shift_patterns').insert(payload).select().single();
+        if (error) throw error;
+        return data as ShiftPattern;
+      }
+    } catch (error) {
+      console.error("Shift pattern mutation failed, queueing to outbox:", error);
+      useOutboxStore.getState().addMutation({
+        id: crypto.randomUUID(),
+        table: 'shift_patterns',
+        action: pattern.id ? 'update' : 'insert',
+        payload: payload as any
+      });
+      throw error;
+    }
+  },
+
   async saveShift(shift: Partial<Shift>, userId: string): Promise<Shift> {
     const payload = {
       ...shift,

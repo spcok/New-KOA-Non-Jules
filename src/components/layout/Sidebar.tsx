@@ -53,7 +53,7 @@ const navGroups = [
     title: 'Admin',
     icon: Settings,
     items: [
-      { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
+      { name: 'Reports', to: '/staff/reports', icon: BarChart3 },
       { name: 'Settings', to: '/admin/settings', icon: Settings },
       { name: 'Help', to: '/admin/help', icon: HelpCircle },
     ]
@@ -61,6 +61,7 @@ const navGroups = [
 ];
 
 interface NavGroupProps {
+  key?: string;
   group: typeof navGroups[0];
 }
 
@@ -105,7 +106,7 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.navigate({ to: '/login' });
+    router.navigate({ to: '/login' as any });
   };
 
   return (

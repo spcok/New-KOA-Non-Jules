@@ -62,11 +62,11 @@ export default function DailyRounds() {
     const map: Record<string, Partial<DailyRound>> = {};
     // 1. Overlay Truth (Server)
     roundsData.forEach(round => {
-      if (round.animal_id) map[round.animal_id] = { ...round };
+      if (round.animal_id) map[round.animal_id] = { ...(round as any) };
     });
     // 2. Overlay Uncommitted Edits (Local)
     Object.entries(pendingChecks).forEach(([id, pending]) => {
-      map[id] = { ...(map[id] || {}), ...pending };
+      map[id] = { ...(map[id] as any || {}), ...(pending as any) };
     });
     return map;
   }, [roundsData, pendingChecks]);
@@ -140,8 +140,8 @@ export default function DailyRounds() {
       const roundsToSave = Object.entries(pendingChecks).map(([id, pendingData]) => {
           const serverRound = roundsData.find(r => r.animal_id === id) || {};
           return {
-              ...serverRound,
-              ...pendingData,
+              ...(serverRound as any),
+              ...(pendingData as any),
               animal_id: id,
               date: viewDate,
               shift: roundType,

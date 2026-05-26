@@ -32,8 +32,7 @@ export function MissingRecords() {
         const hasWeight = dailyLogs.some(log => 
           log.animal_id === animal.id && 
           log.log_date.startsWith(day.iso) && 
-          log.weight_grams !== null && 
-          log.weight_grams > 0
+          (log.weight_grams ?? 0) > 0
         );
 
         // Check for Feed: EITHER a completed feeding schedule OR a daily log marked as a feed

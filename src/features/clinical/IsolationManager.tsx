@@ -41,7 +41,7 @@ export default function IsolationManager() {
     return days === 0 ? 'Day 1' : `${days} Days`;
   };
 
-  const formatReason = (reason: string) => reason.replace(/_/g, ' ');
+  const formatReason = (reason: string | null | undefined) => (reason || '').replace(/_/g, ' ');
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto font-sans pb-12">

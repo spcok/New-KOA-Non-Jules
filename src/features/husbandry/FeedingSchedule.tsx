@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { z } from 'zod';
 import { supabase } from '../../lib/supabase';
 import { Animal, FeedingSchedule as FeedingScheduleType, OperationalList } from '../../types/schema';
 import { feedingService } from '../../services/feedingService';
@@ -83,6 +81,7 @@ export default function FeedingSchedule() {
       food_type: '',
       quantity: 1,
       calci_dust: false,
+      feed_not_required: false,
       schedule_mode: 'single' as 'single' | 'interval',
       target_date: getLocalDateString(),
       interval_days: 3,
@@ -107,10 +106,11 @@ export default function FeedingSchedule() {
         const newSchedules = datesToSchedule.map(date => ({
             animal_id: value.animal_id,
             scheduled_date: date,
-            food_type: value.food_type,
-            quantity: value.quantity,
+            food_type: value.feed_not_required ? 'NOT REQUIRED' : value.food_type,
+            quantity: value.feed_not_required ? 0 : value.quantity,
             calci_dust: value.calci_dust,
-            is_completed: false,
+            feed_not_required: value.feed_not_required,
+            is_completed: value.feed_not_required, // Auto-complete if it's a fast day
             is_deleted: false,
             interval_days: value.schedule_mode === 'interval' ? value.interval_days : null
         }));
@@ -169,33 +169,46 @@ export default function FeedingSchedule() {
                     </div>
                 )}/>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <form.Field name="food_type" children={(field) => (
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Food Type *</label>
-                            {foodOptions.length > 0 ? (
-                                <select value={field.state.value} onChange={e => field.handleChange(e.target.value)} className={inputClass} required>
-                                    <option value="">Select...</option>
-                                    {foodOptions.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-                                </select>
-                            ) : (
-                                <input value={field.state.value} onChange={e => field.handleChange(e.target.value)} className={inputClass} placeholder="E.g. Mice" required />
-                            )}
-                        </div>
-                    )}/>
-                    <form.Field name="quantity" children={(field) => (
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Quantity *</label>
-                            <input type="number" step="0.1" value={field.state.value} onChange={e => field.handleChange(parseFloat(e.target.value))} className={inputClass} required />
-                        </div>
-                    )}/>
-                </div>
-
-                <form.Field name="calci_dust" children={(field) => (
-                    <div className="flex items-center gap-3 bg-[#0F1117] p-3 rounded-xl border border-slate-800/80 shadow-inner">
-                        <input type="checkbox" checked={field.state.value} onChange={e => field.handleChange(e.target.checked)} className="w-4 h-4 text-emerald-500 bg-[#0A0B0E] rounded border-slate-700 focus:ring-emerald-500/50" />
-                        <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Include Calci-Dust</span>
+                <form.Field name="feed_not_required" children={(field) => (
+                    <div className="flex items-center gap-3 bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 shadow-inner">
+                        <input type="checkbox" checked={field.state.value} onChange={e => field.handleChange(e.target.checked)} className="w-4 h-4 text-rose-500 bg-[#0A0B0E] rounded border-rose-500/50 focus:ring-rose-500/50" />
+                        <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">Fast Day / Not Required</span>
                     </div>
+                )}/>
+
+                <form.Subscribe selector={(state) => state.values.feed_not_required} children={(notRequired) => (
+                  !notRequired ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                          <form.Field name="food_type" children={(field) => (
+                              <div>
+                                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Food Type *</label>
+                                  {foodOptions.length > 0 ? (
+                                      <select value={field.state.value} onChange={e => field.handleChange(e.target.value)} className={inputClass} required>
+                                          <option value="">Select...</option>
+                                          {foodOptions.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+                                      </select>
+                                  ) : (
+                                      <input value={field.state.value} onChange={e => field.handleChange(e.target.value)} className={inputClass} placeholder="E.g. Mice" required />
+                                  )}
+                              </div>
+                          )}/>
+                          <form.Field name="quantity" children={(field) => (
+                              <div>
+                                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Quantity *</label>
+                                  <input type="number" step="0.1" value={field.state.value} onChange={e => field.handleChange(parseFloat(e.target.value))} className={inputClass} required />
+                              </div>
+                          )}/>
+                      </div>
+
+                      <form.Field name="calci_dust" children={(field) => (
+                          <div className="flex items-center gap-3 bg-[#0F1117] p-3 rounded-xl border border-slate-800/80 shadow-inner">
+                              <input type="checkbox" checked={field.state.value} onChange={e => field.handleChange(e.target.checked)} className="w-4 h-4 text-emerald-500 bg-[#0A0B0E] rounded border-slate-700 focus:ring-emerald-500/50" />
+                              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Include Calci-Dust</span>
+                          </div>
+                      )}/>
+                    </>
+                  ) : null
                 )}/>
 
                 <div className="pt-4 border-t border-slate-800/80">
@@ -310,8 +323,14 @@ export default function FeedingSchedule() {
                                                 <p className="text-xs font-bold text-white uppercase tracking-tight">{animal?.name || 'Unknown'}</p>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{schedule.quantity}x {schedule.food_type}</p>
-                                                {schedule.calci_dust && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">+ Calci-Dust</span>}
+                                                {schedule.feed_not_required ? (
+                                                  <p className="text-xs font-bold text-rose-500 uppercase tracking-widest">NOT REQUIRED</p>
+                                                ) : (
+                                                  <>
+                                                    <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{schedule.quantity}x {schedule.food_type}</p>
+                                                    {schedule.calci_dust && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">+ Calci-Dust</span>}
+                                                  </>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <button onClick={async () => {
@@ -349,8 +368,14 @@ export default function FeedingSchedule() {
                                                 <p className="text-xs font-bold text-white uppercase tracking-tight">{animal?.name || 'Unknown'}</p>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{group.quantity}x {group.food_type} <span className="text-slate-500">({group.count} feeds)</span></p>
-                                                {group.calci_dust && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">+ Calci-Dust</span>}
+                                                {group.feed_not_required ? (
+                                                  <p className="text-xs font-bold text-rose-500 uppercase tracking-widest">NOT REQUIRED</p>
+                                                ) : (
+                                                  <>
+                                                    <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{group.quantity}x {group.food_type} <span className="text-slate-500">({group.count} feeds)</span></p>
+                                                    {group.calci_dust && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">+ Calci-Dust</span>}
+                                                  </>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <button onClick={async () => {

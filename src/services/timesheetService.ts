@@ -6,6 +6,22 @@ import { queryClient } from '../lib/db';
 const generateUUID = () => crypto.randomUUID();
 
 export const timesheetService = {
+  getActiveShift: async (userId: string): Promise<Timesheet | null> => {
+    const { data, error } = await supabase
+      .from('timesheets')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'ACTIVE')
+      .eq('is_deleted', false)
+      .limit(1);
+
+    if (error) {
+      console.error("Error fetching active shift:", error);
+      throw error;
+    }
+    return (data && data.length > 0) ? (data[0] as Timesheet) : null;
+  },
+
   getStaffMembers: async (): Promise<User[]> => {
     const { data, error } = await supabase
       .from('users')
