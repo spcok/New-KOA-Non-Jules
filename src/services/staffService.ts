@@ -1,16 +1,15 @@
-import { supabase } from '../lib/supabase';
-import { User } from '../types/schema';
+import { baseService } from './baseService';
+import { timesheetsCollection } from '../lib/db';
+import type { Timesheet } from '../types/schema';
 
 export const staffService = {
-  createStaffMemberOnline: async (payload: Partial<User>): Promise<{ tempPassword: string, email: string }> => {
-    // This action requires network. It bypasses the outbox.
-    const { data, error } = await supabase.functions.invoke('create-staff', {
-      body: payload
+  saveTimesheet: async (data: Partial<Timesheet>, userId: string): Promise<void> => {
+    const payload = { ...data, staff_id: userId, updated_at: new Date().toISOString() };
+    await timesheetsCollection.upsert(payload as any);
+    await baseService.upsert({
+      table: 'timesheets',
+      payload,
+      queryKey: ['timesheets']
     });
-
-    if (error) throw new Error(error.message);
-    if (data.error) throw new Error(data.error);
-
-    return { tempPassword: data.tempPassword, email: data.email };
-  },
+  }
 };
