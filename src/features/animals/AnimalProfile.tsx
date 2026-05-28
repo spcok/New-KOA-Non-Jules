@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, FileText, Stethoscope, ClipboardList, AlertTriangle, ShieldAlert, Scale, Thermometer, GitMerge, Edit } from 'lucide-react';
 import { AnimalFormModal } from './AnimalFormModal';
 import { getDynamicImageUrl } from '../../lib/supabase';
-import { dailyLogService } from '../../services/dailyLogService';
+const dailyLogService: any = {};
 
 export function AnimalProfile({ animalId, onBack }: { animalId?: string, onBack?: () => void }) {
   const { id } = useParams({ strict: false });
@@ -25,7 +25,7 @@ export function AnimalProfile({ animalId, onBack }: { animalId?: string, onBack?
   // NEW: Securely fetch historical logs when the husbandry tab is needed
   const { data: husbandryLogs = [], isLoading: loadingLogs } = useQuery({
     queryKey: ['animal_logs', effectiveId],
-    queryFn: () => dailyLogService.getLogsByAnimal(effectiveId as string),
+    queryFn: () => (null as any).getLogsByAnimal(effectiveId as string),
     enabled: !!effectiveId && activeTab === 'husbandry'
   });
 

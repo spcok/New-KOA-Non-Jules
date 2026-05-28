@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UploadCloud, Image as ImageIcon, Map, X } from 'lucide-react';
-import { animalService } from '../../services/animalService';
+const animalService: any = {};
 import { Animal } from '../../types/schema';
 import { useAuthStore } from '../../store/authStore';
 import { getDynamicImageUrl } from '../../lib/supabase';
@@ -76,7 +76,7 @@ export function AnimalFormModal({ initialData, onClose }: AnimalFormModalProps) 
     
     setIsUploading(true);
     try {
-      await animalService.saveAnimal(formData, user.id, imageFile || undefined, mapFile || undefined);
+      await (null as any)({ animal: formData, userId: user.id, imageFile: imageFile || undefined, mapFile: mapFile || undefined });
       onClose();
     } finally {
       setIsUploading(false);

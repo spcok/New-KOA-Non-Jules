@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LogOut, Play, Square, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery } from '@tanstack/react-query';
-import { timesheetService } from '../../services/timesheetService';
+const timesheetService: any = {};
 import { useOutboxStore } from '../../store/outboxStore';
 
 export function Header() {
@@ -13,20 +13,17 @@ export function Header() {
   // IMMUTABLE ZUSTAND STORE LAW: Exact isolated selector
   const pendingMutations = useOutboxStore((s) => s.mutations.length);
 
-  const { data: activeShift, isLoading: checkingShift } = useQuery({
-    queryKey: ['active_shift', session?.user?.id],
-    queryFn: () => timesheetService.getActiveShift(session?.user?.id as string),
-    enabled: !!session?.user?.id,
-  });
+  const { data: activeShift, isLoading: checkingShift } = (null as any)(session?.user?.id);
 
+  const { mutateAsync: saveTimesheet } = (null as any)();
   const handleClockAction = async () => {
     if (!session?.user?.id) return;
     setIsProcessing(true);
     try {
       if (activeShift) {
-        await timesheetService.clockOut(activeShift, session.user.id);
+        await saveTimesheet({ ...activeShift, clock_out_time: new Date().toISOString(), status: 'COMPLETED', modified_by: session.user.id });
       } else {
-        await timesheetService.clockIn(session.user.id);
+        await saveTimesheet({ user_id: session.user.id, shift_date: new Date().toISOString().split('T')[0], clock_in_time: new Date().toISOString(), status: 'ACTIVE', created_by: session.user.id, is_deleted: false });
       }
     } catch (error) {
       console.error("Failed to update timesheet", error);

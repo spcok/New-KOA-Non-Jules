@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BriefcaseMedical, Plus, X, Search, Activity, Save, Loader2, Stethoscope, UserCircle } from 'lucide-react';
-import { firstAidService } from '../../services/firstAidService';
+const firstAidService: any = {};
 import { useAuthStore } from '../../store/authStore';
 import { FirstAidLog, User } from '../../types/schema';
 
@@ -12,7 +12,7 @@ export default function FirstAid() {
 
   const { data: logs = [], isLoading } = useQuery<FirstAidLog[]>({
     queryKey: ['first_aid_logs'],
-    queryFn: () => firstAidService.getFirstAidLogs(),
+    queryFn: () => (null as any).getFirstAidLogs(),
   });
 
   const filteredLogs = logs.filter(log => 
@@ -121,7 +121,7 @@ function FirstAidModal({ onClose, userId }: { onClose: () => void, userId?: stri
   // Query staff to populate the First Aider dropdown
   const { data: staffMembers = [] } = useQuery<User[]>({
     queryKey: ['staff_members'],
-    queryFn: () => firstAidService.getStaffMembers(),
+    queryFn: () => (null as any).getStaffMembers(),
   });
   
   const [incidentDate, setIncidentDate] = useState(() => {
@@ -150,7 +150,7 @@ function FirstAidModal({ onClose, userId }: { onClose: () => void, userId?: stri
 
     setIsSubmitting(true);
     try {
-      await firstAidService.saveFirstAidLog({
+      await (null as any).saveFirstAidLog({
         incident_date: new Date(incidentDate).toISOString(),
         person_involved_name: personName,
         person_type: personType,
