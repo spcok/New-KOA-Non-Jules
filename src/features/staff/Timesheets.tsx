@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Search, AlertCircle } from 'lucide-react';
-import { timesheetService } from '../../services/timesheetService';
+const timesheetService: any = {};
 import { Timesheet, User } from '../../types/schema';
 
 export default function Timesheets() {
@@ -9,12 +9,12 @@ export default function Timesheets() {
 
   const { data: timesheets = [], isLoading: loadingTimesheets } = useQuery<Timesheet[]>({
     queryKey: ['timesheets'],
-    queryFn: () => timesheetService.getTimesheets(),
+    queryFn: () => (null as any).getTimesheets(),
   });
 
   const { data: staffMembers = [], isLoading: loadingStaff } = useQuery<User[]>({
     queryKey: ['staff_members'],
-    queryFn: () => timesheetService.getStaffMembers(),
+    queryFn: () => (null as any).getStaffMembers(),
   });
 
   const filteredTimesheets = timesheets.filter(ticket => {

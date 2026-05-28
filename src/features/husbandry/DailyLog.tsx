@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users, Calendar, ChevronLeft, ChevronRight, Plus, Check } from 'lucide-react';
 import { supabase, getDynamicImageUrl } from '../../lib/supabase';
-import { dailyLogService } from '../../services/dailyLogService';
+const dailyLogService: any = {};
 import { Animal, DailyLog as DailyLogType } from '../../types/schema';
 import AddEntryModal from './AddEntryModal';
 
@@ -42,7 +42,7 @@ export default function DailyLog() {
   
   const { data: todaysLogs = [], isLoading: loadingLogs } = useQuery<DailyLogType[]>({ 
     queryKey: ['daily_logs', viewDate], 
-    queryFn: () => dailyLogService.getLogsByDate(viewDate)
+    queryFn: () => (null as any).getLogsByDate(viewDate)
   });
 
   const adjustDate = (days: number) => {

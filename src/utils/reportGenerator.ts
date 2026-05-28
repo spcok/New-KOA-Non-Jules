@@ -86,11 +86,11 @@ export const reportGenerator = {
       new TableRow({
         tableHeader: true,
         children: [
-          new TableCell({ children: [new Paragraph({ text: "Date/Time", bold: true })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ text: "Animal", bold: true })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ text: "Type", bold: true })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ text: "Record Details", bold: true })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ text: "Staff", bold: true })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Date/Time", bold: true })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Animal", bold: true })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Type", bold: true })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Record Details", bold: true })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Staff", bold: true })] })], shading: { fill: "E2E8F0" } }),
         ],
       }),
     ];
@@ -111,8 +111,8 @@ export const reportGenerator = {
       tableRows.push(
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: logDate.toLocaleDateString('en-GB') }), new Paragraph({ text: logDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), size: 16 })] }),
-            new TableCell({ children: [new Paragraph({ text: animal?.name || 'Unknown' }), new Paragraph({ text: animal?.species || '', size: 16 })] }),
+            new TableCell({ children: [new Paragraph({ text: logDate.toLocaleDateString('en-GB') }), new Paragraph({ children: [new TextRun({ text: logDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), size: 16 })] })] }),
+            new TableCell({ children: [new Paragraph({ text: animal?.name || 'Unknown' }), new Paragraph({ children: [new TextRun({ text: animal?.species || '', size: 16 })] })] }),
             new TableCell({ children: [new Paragraph({ text: log.log_type })] }),
             new TableCell({ children: [new Paragraph({ text: recordDetails })] }),
             new TableCell({ children: [new Paragraph({ text: user?.initials || 'Sys' })] }),

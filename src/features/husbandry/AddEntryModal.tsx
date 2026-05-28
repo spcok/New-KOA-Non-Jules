@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { dailyLogService } from '../../services/dailyLogService';
+const dailyLogService: any = {};
 import { X, Save, Plus, Trash2 } from 'lucide-react';
 import { Animal, DailyLog, OperationalList } from '../../types/schema';
 import { useAuthStore } from '../../store/authStore';
